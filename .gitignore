@@ -1,0 +1,7 @@
+# never commit the downloaded archive
+*.tar
+*.tar.gz
+*.zip
+mpss-*/
+repos/
+build/

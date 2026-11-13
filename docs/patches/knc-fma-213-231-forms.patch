@@ -1,0 +1,117 @@
+--- a/llvm/lib/Target/X86/X86InstrCompiler.td
++++ b/llvm/lib/Target/X86/X86InstrCompiler.td
+@@ -2539,14 +2539,27 @@
+         (ins VR512:$lhs, VR512:$rhs), "knc.vsubps\t$rhs, $lhs, $dst", []>;
+     def KNC_VSUBPDrr : I<0x5c, RawFrm, (outs VR512:$dst),
+         (ins VR512:$lhs, VR512:$rhs), "knc.vsubpd\t$rhs, $lhs, $dst", []>;
+-    let Constraints = "$dst = $a" in
++    // Three FMA forms, operands (tied, vvvv, rm): 132: dst = o1*o3 + o2; 213: dst = o2*o1 + o3;
++    // 231: dst = o2*o3 + o1. ISel emits 132; X86InstrInfo::commuteInstructionImpl switches forms so
++    // the two-address pass can tie whichever source operand dies (saves a copy per accumulate FMA).
++    let Constraints = "$dst = $a", isCommutable = 1 in
+     def KNC_VFMADD132PS : I<0x98, RawFrm, (outs VR512:$dst),
+         (ins VR512:$a, VR512:$c, VR512:$b), "knc.vfmadd132ps\t$b, $c, $dst",
+         [(set VR512:$dst, (v16f32 (fma VR512:$a, VR512:$b, VR512:$c)))]>;
+-    let Constraints = "$dst = $a" in
++    let Constraints = "$dst = $a", isCommutable = 1 in
+     def KNC_VFMADD132PD : I<0x98, RawFrm, (outs VR512:$dst),
+         (ins VR512:$a, VR512:$c, VR512:$b), "knc.vfmadd132pd\t$b, $c, $dst",
+         [(set VR512:$dst, (v8f64 (fma VR512:$a, VR512:$b, VR512:$c)))]>;
++    let Constraints = "$dst = $a", isCommutable = 1 in {
++    def KNC_VFMADD213PS : I<0xa8, RawFrm, (outs VR512:$dst),
++        (ins VR512:$a, VR512:$b, VR512:$c), "knc.vfmadd213ps\t$c, $b, $dst", []>;
++    def KNC_VFMADD213PD : I<0xa8, RawFrm, (outs VR512:$dst),
++        (ins VR512:$a, VR512:$b, VR512:$c), "knc.vfmadd213pd\t$c, $b, $dst", []>;
++    def KNC_VFMADD231PS : I<0xb8, RawFrm, (outs VR512:$dst),
++        (ins VR512:$a, VR512:$b, VR512:$c), "knc.vfmadd231ps\t$c, $b, $dst", []>;
++    def KNC_VFMADD231PD : I<0xb8, RawFrm, (outs VR512:$dst),
++        (ins VR512:$a, VR512:$b, VR512:$c), "knc.vfmadd231pd\t$c, $b, $dst", []>;
++    }
+     def KNC_CVT_I32_F32 : I<0xcb, RawFrm, (outs VR512:$dst),
+         (ins VR512:$src), "knc.cvt_i32_f32\t$src, $dst",
+         [(set VR512:$dst, (v16f32 (sint_to_fp VR512:$src)))]>;
+--- a/llvm/lib/Target/X86/MCTargetDesc/X86MCCodeEmitter.cpp
++++ b/llvm/lib/Target/X86/MCTargetDesc/X86MCCodeEmitter.cpp
+@@ -1639,7 +1639,9 @@
+     emitByte(KNCCvtFromFP ? 3 : 0, CB);
+     return;
+   }
+-  bool KNCFMA = Opcode == X86::KNC_VFMADD132PS || Opcode == X86::KNC_VFMADD132PD;
++  bool KNCFMA = Opcode == X86::KNC_VFMADD132PS || Opcode == X86::KNC_VFMADD132PD ||
++                Opcode == X86::KNC_VFMADD213PS || Opcode == X86::KNC_VFMADD213PD ||
++                Opcode == X86::KNC_VFMADD231PS || Opcode == X86::KNC_VFMADD231PD;
+   unsigned KNCExtraOpcode = 0, KNCExtraMap = 1;
+   bool KNCExtraW = false, KNCExtraPP0 = false;
+   switch (Opcode) {
+@@ -1659,6 +1661,10 @@
+   case X86::KNC_VPERMDrr: KNCExtraOpcode = 0x36; KNCExtraMap = 2; break;
+   case X86::KNC_VFMADD132PS: KNCExtraOpcode = 0x98; KNCExtraMap = 2; break;
+   case X86::KNC_VFMADD132PD: KNCExtraOpcode = 0x98; KNCExtraMap = 2; KNCExtraW = true; break;
++  case X86::KNC_VFMADD213PS: KNCExtraOpcode = 0xa8; KNCExtraMap = 2; break;
++  case X86::KNC_VFMADD213PD: KNCExtraOpcode = 0xa8; KNCExtraMap = 2; KNCExtraW = true; break;
++  case X86::KNC_VFMADD231PS: KNCExtraOpcode = 0xb8; KNCExtraMap = 2; break;
++  case X86::KNC_VFMADD231PD: KNCExtraOpcode = 0xb8; KNCExtraMap = 2; KNCExtraW = true; break;
+   case X86::KNC_VSUBPSrr: KNCExtraOpcode = 0x5c; KNCExtraPP0 = true; break;
+   case X86::KNC_VSUBPDrr: KNCExtraOpcode = 0x5c; KNCExtraW = true; break;
+   case X86::KNC_VPBLENDMD: KNCExtraOpcode = 0x64; KNCExtraMap = 2; break;
+--- a/llvm/lib/Target/X86/X86InstrInfo.cpp
++++ b/llvm/lib/Target/X86/X86InstrInfo.cpp
+@@ -2304,6 +2304,27 @@
+   case X86::OP##_ND:
+ 
+   switch (Opc) {
++  case X86::KNC_VFMADD132PS: case X86::KNC_VFMADD132PD:
++  case X86::KNC_VFMADD213PS: case X86::KNC_VFMADD213PD:
++  case X86::KNC_VFMADD231PS: case X86::KNC_VFMADD231PD: {
++    // Operands: 0 dst, 1 tied, 2 vvvv, 3 rm. 132: o1*o3+o2  213: o2*o1+o3  231: o2*o3+o1.
++    // Swapping two sources keeps the value when the form changes as tabulated here.
++    bool PS = Opc == X86::KNC_VFMADD132PS || Opc == X86::KNC_VFMADD213PS || Opc == X86::KNC_VFMADD231PS;
++    unsigned Form = (Opc == X86::KNC_VFMADD132PS || Opc == X86::KNC_VFMADD132PD) ? 132
++                  : (Opc == X86::KNC_VFMADD213PS || Opc == X86::KNC_VFMADD213PD) ? 213 : 231;
++    unsigned Lo = std::min(OpIdx1, OpIdx2), Hi = std::max(OpIdx1, OpIdx2);
++    unsigned NewForm;
++    if (Lo == 1 && Hi == 2)      NewForm = Form == 132 ? 231 : Form == 231 ? 132 : 213;
++    else if (Lo == 1 && Hi == 3) NewForm = Form == 132 ? 132 : Form == 231 ? 213 : 231;
++    else if (Lo == 2 && Hi == 3) NewForm = Form == 132 ? 213 : Form == 231 ? 231 : 132;
++    else return nullptr;
++    unsigned NewOpc = NewForm == 132 ? (PS ? X86::KNC_VFMADD132PS : X86::KNC_VFMADD132PD)
++                    : NewForm == 213 ? (PS ? X86::KNC_VFMADD213PS : X86::KNC_VFMADD213PD)
++                                     : (PS ? X86::KNC_VFMADD231PS : X86::KNC_VFMADD231PD);
++    WorkingMI = CloneIfNew(MI);
++    WorkingMI->setDesc(get(NewOpc));
++    break;
++  }
+   // SHLD B, C, I <-> SHRD C, B, (BitWidth - I)
+   CASE_ND(SHRD16rri8)
+   CASE_ND(SHLD16rri8)
+@@ -2809,6 +2830,19 @@
+     return false;
+ 
+   switch (MI.getOpcode()) {
++  case X86::KNC_VFMADD132PS: case X86::KNC_VFMADD132PD:
++  case X86::KNC_VFMADD213PS: case X86::KNC_VFMADD213PD:
++  case X86::KNC_VFMADD231PS: case X86::KNC_VFMADD231PD: {
++    // Three source operands (1 tied to dst, 2 = vvvv, 3 = rm); any pair commutes with a form switch.
++    unsigned Op1 = SrcOpIdx1, Op2 = SrcOpIdx2;
++    if (Op1 == CommuteAnyOperandIndex && Op2 == CommuteAnyOperandIndex) { Op1 = 2; Op2 = 3; }
++    else if (Op1 == CommuteAnyOperandIndex) Op1 = (Op2 == 2) ? 3 : 2;
++    else if (Op2 == CommuteAnyOperandIndex) Op2 = (Op1 == 2) ? 3 : 2;
++    if (Op1 < 1 || Op1 > 3 || Op2 < 1 || Op2 > 3 || Op1 == Op2)
++      return false;
++    SrcOpIdx1 = Op1; SrcOpIdx2 = Op2;
++    return true;
++  }
+   case X86::CMPSDrri:
+   case X86::CMPSSrri:
+   case X86::CMPPDrri:
+@@ -4754,6 +4788,10 @@
+   case X86::KNC_VMULPDrr:
+   case X86::KNC_VFMADD132PS:
+   case X86::KNC_VFMADD132PD:
++  case X86::KNC_VFMADD213PS:
++  case X86::KNC_VFMADD213PD:
++  case X86::KNC_VFMADD231PS:
++  case X86::KNC_VFMADD231PD:
+     return KNCFPScheduling ? 4 : 0;
+   case X86::KNC_VRCP23PS:
+   case X86::KNC_VRSQRT23PS:

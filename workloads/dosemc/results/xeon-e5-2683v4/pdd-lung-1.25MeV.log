@@ -1,0 +1,1 @@
+dosemc: phantom=lung E=1.25 MeV histories=4000000 threads=64 time=0.18s rate=2.166e7 hist/s dmax at z=0.62 cm

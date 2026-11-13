@@ -1,0 +1,13 @@
+Warning: Permanently added '172.31.1.1' (ECDSA) to the list of known hosts.
+Linux knc-guest-mic0 2.6.38.8+mpss3.8.6 #1 SMP Thu Jul 25 13:16:12 EDT 2019 k1om GNU/Linux
+cores=228
+head: invalid option -- '2'
+BusyBox v1.27.0 (2019-07-25 13:17:47 EDT) multi-call binary.
+
+Usage: head [OPTIONS] [FILE]...
+head: invalid option -- '1'
+BusyBox v1.27.0 (2019-07-25 13:17:47 EDT) multi-call binary.
+
+Usage: head [OPTIONS] [FILE]...
+model name	: 0b/01
+ 03:15:26 up 0 min,  0 users,  load average: 0.04, 0.01, 0.01

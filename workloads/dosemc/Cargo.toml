@@ -1,0 +1,12 @@
+[package]
+name = "dosemc"
+version = "0.1.0"
+edition = "2021"
+description = "Monte Carlo photon/electron dose transport in a voxel slab phantom (water / lung), fp64, embarrassingly parallel, no dependencies"
+
+[dependencies]
+
+[profile.release]
+opt-level = 3
+codegen-units = 1
+panic = "abort"

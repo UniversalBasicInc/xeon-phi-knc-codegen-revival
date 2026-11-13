@@ -1,0 +1,12 @@
+mic0 (temp):
+   Cpu Temp: ................ 54.00 C
+   Memory Temp: ............. 44.00 C
+   Fan-In Temp: ............. 27.00 C
+   Fan-Out Temp: ............ 45.00 C
+   Core Rail Temp: .......... 47.00 C
+   Uncore Rail Temp: ........ 49.00 C
+   Memory Rail Temp: ........ 49.00 C
+mic0 (freq):
+   Core Frequency: .......... 1.10 GHz
+   Total Power: ............. 108.00 Watts
+   Low Power Limit: ......... 283.00 Watts

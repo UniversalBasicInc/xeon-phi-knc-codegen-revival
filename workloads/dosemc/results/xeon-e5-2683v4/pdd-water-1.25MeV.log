@@ -1,0 +1,1 @@
+dosemc: phantom=water E=1.25 MeV histories=4000000 threads=64 time=0.26s rate=1.518e7 hist/s dmax at z=0.62 cm

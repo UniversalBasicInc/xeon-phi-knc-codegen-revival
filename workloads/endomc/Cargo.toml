@@ -1,0 +1,12 @@
+[package]
+name = "endomc"
+version = "0.1.0"
+edition = "2021"
+description = "Reimplementation of Miller et al. 2025 (J R Soc Interface 22:20250076) immune–endometrial ODE model, with parameter sweeps and virtual cohorts; fp64, no dependencies"
+
+[dependencies]
+
+[profile.release]
+opt-level = 3
+codegen-units = 1
+panic = "abort"

@@ -1,0 +1,35 @@
+  2000/14848 (22s)
+  4000/14848 (49s)
+  6000/14848 (78s)
+  8000/14848 (109s)
+  10000/14848 (137s)
+  12000/14848 (164s)
+  14000/14848 (193s)
+sobol: 14848 simulations on 64 threads in 221s; N=512 span=x/÷3; P(disease)=0.483; var(log10 EA)=14.901
+  eta_e     S1=  0.257 ST=  0.561 | disease S1=  0.211 ST=  0.516
+  omega     S1=  0.211 ST=  0.436 | disease S1=  0.219 ST=  0.469
+  gamma     S1=  0.056 ST=  0.247 | disease S1=  0.047 ST=  0.223
+  delta_k   S1=  0.042 ST=  0.219 | disease S1=  0.125 ST=  0.387
+  mc        S1=  0.056 ST=  0.193 | disease S1= -0.023 ST=  0.199
+  mu_k      S1=  0.022 ST=  0.126 | disease S1=  0.078 ST=  0.172
+  theta_k   S1=  0.019 ST=  0.112 | disease S1= -0.008 ST=  0.141
+  beta1     S1=  0.041 ST=  0.111 | disease S1=  0.063 ST=  0.141
+  sigma     S1=  0.014 ST=  0.102 | disease S1=  0.031 ST=  0.125
+  eta_k     S1=  0.031 ST=  0.095 | disease S1=  0.000 ST=  0.188
+  delta_m   S1=  0.035 ST=  0.079 | disease S1=  0.031 ST=  0.129
+  cm1       S1= -0.004 ST=  0.070 | disease S1= -0.008 ST=  0.086
+  delta_e   S1=  0.023 ST=  0.036 | disease S1=  0.023 ST=  0.055
+  kc        S1=  0.027 ST=  0.035 | disease S1=  0.016 ST=  0.125
+  eta_m     S1= -0.000 ST=  0.013 | disease S1=  0.008 ST=  0.016
+  mu_e      S1= -0.003 ST=  0.008 | disease S1=  0.023 ST=  0.012
+  rho0      S1= -0.009 ST=  0.007 | disease S1=  0.008 ST=  0.043
+  delta_e0  S1= -0.005 ST=  0.004 | disease S1= -0.016 ST=  0.023
+  beta2     S1=  0.001 ST=  0.003 | disease S1=  0.008 ST=  0.012
+  rho_f     S1=  0.001 ST=  0.003 | disease S1=  0.008 ST=  0.008
+  cm2       S1=  0.001 ST=  0.002 | disease S1= -0.008 ST=  0.004
+  beta12    S1= -0.001 ST=  0.001 | disease S1=  0.000 ST=  0.000
+  mu_m      S1= -0.000 ST=  0.001 | disease S1= -0.008 ST=  0.008
+  ec        S1=  0.002 ST=  0.001 | disease S1=  0.000 ST=  0.000
+  beta21    S1=  0.000 ST=  0.000 | disease S1=  0.000 ST=  0.000
+  cka       S1= -0.000 ST=  0.000 | disease S1=  0.000 ST=  0.000
+  theta_m   S1=  0.000 ST=  0.000 | disease S1=  0.000 ST=  0.000

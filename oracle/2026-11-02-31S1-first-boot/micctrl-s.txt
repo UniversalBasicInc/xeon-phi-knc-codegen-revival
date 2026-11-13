@@ -1,0 +1,1 @@
+mic0: online (mode: linux image: /usr/share/mpss/boot/bzImage-knightscorner)
